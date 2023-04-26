@@ -45,19 +45,27 @@ Name of the bucket: dtc_data_lake_dtc-de-ab
 
 ## Prefect Blocks
 Blocks are a primitive within Prefect that enable the storage of configuration and provide an interface for interacting with external systems. With blocks, you can securely store credentials for authenticating with services like AWS, GitHub, Slack, and any other system you'd like to orchestrate with Prefect.
+![image](https://user-images.githubusercontent.com/52333702/234567431-af10f0f2-f6f1-4468-8d03-4e2af43a22e4.png)
+
 
 ### Create service account
 On Google Cloud Console, select IAM & Admin, and Service Accounts. Then click on + CREATE SERVICE ACCOUNT with these informations:
 Service account details: zoom-de-service-account
 Give the roles BigQuery Admin and Storage Admin.
+![image](https://user-images.githubusercontent.com/52333702/234567551-e886a1cb-99fd-4b19-91cf-5ad06c2af6ac.png)
 
 ### Add the new key to the service account
 Then, add a key on it. Click on ADD KEY + button, select CREATE A NEW KEY, select JSON and click on CREATE button.
 
-### Adding Credentials 
+
+### Adding Credentials 
 When returning to the Orion form to create the GCS Bucket, which is called dtc_data_lake_dtc-de-ab, make sure the Gcp Credentials field says e-commerce-creds.
+![image](https://user-images.githubusercontent.com/52333702/234567937-c78b8931-c47c-4ec2-8c39-d146544b1d5e.png)
+![image](https://user-images.githubusercontent.com/52333702/234568118-e1b7640a-1d85-4475-91b1-f1010ba85c50.png)
 
 We then obtain a fragment of code to insert into our python code. Which allows us to add the write_gcs method to prefect_storage.py.
+![image](https://user-images.githubusercontent.com/52333702/234568298-10c5290a-5f17-4dc6-b3eb-196dcfb57515.png)
+
 
 # ELT main script 
 ```python
@@ -103,6 +111,9 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 ```
+![image](https://user-images.githubusercontent.com/52333702/234568443-7d48ad76-95ef-4848-94bd-b0fb4651df3b.png)
+![image](https://user-images.githubusercontent.com/52333702/234568502-d266c99a-9e2b-450f-adda-4e35e6f82733.png)
+![image](https://user-images.githubusercontent.com/52333702/234568532-036c7164-c413-4b84-a59d-6f57216a546b.png)
 
 # Summary
 In this blog post, we explored how to automate data engineering tasks using Kaggle and Prefect. We demonstrated how to download CSV data from Kaggle and store it in Google Cloud Storage using Prefect. While Prefect provides a powerful workflow orchestration tool, it's essential to understand its pros and cons in a real-life work environment.
