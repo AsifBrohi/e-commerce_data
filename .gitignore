@@ -1,0 +1,8 @@
+__pycash__
+env/
+.env/
+view_data.ipynb
+**__pycache__/
+.history
+.ipynb_checkpoints/
+**.pytest_cache/
