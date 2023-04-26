@@ -60,6 +60,7 @@ Then, add a key on it. Click on ADD KEY + button, select CREATE A NEW KEY, selec
 
 ### Adding Credentials 
 When returning to the Orion form to create the GCS Bucket, which is called dtc_data_lake_dtc-de-ab, make sure the Gcp Credentials field says e-commerce-creds.
+
 ![image](https://user-images.githubusercontent.com/52333702/234567937-c78b8931-c47c-4ec2-8c39-d146544b1d5e.png)
 ![image](https://user-images.githubusercontent.com/52333702/234568118-e1b7640a-1d85-4475-91b1-f1010ba85c50.png)
 
@@ -111,6 +112,9 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 ```
+
+We successfully transferred a CSV file into Cloud Storage using Prefect GCP. The task and flow were designed to transfer the file from a local directory to a Cloud Storage bucket. We utilized Prefect GCP's seamless integration with Google Cloud Storage to streamline the transfer process. The logs show that the task was completed successfully, with no errors or issues. The CSV file contains e-commerce shipping data, and its transfer to Cloud Storage will facilitate the use of BigQuerry. Overall, Prefect GCP proved to be an effective tool for this task, providing improved scheduling and monitoring capabilities, as well as easy integration with GCP services. The attached screenshots of the logs demonstrate the successful completion of the task seen below.
+
 ![image](https://user-images.githubusercontent.com/52333702/234568443-7d48ad76-95ef-4848-94bd-b0fb4651df3b.png)
 ![image](https://user-images.githubusercontent.com/52333702/234568502-d266c99a-9e2b-450f-adda-4e35e6f82733.png)
 ![image](https://user-images.githubusercontent.com/52333702/234568532-036c7164-c413-4b84-a59d-6f57216a546b.png)
