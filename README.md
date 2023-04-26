@@ -11,10 +11,10 @@ Moreover, Prefect also provides a graphical user interface (GUI) for visualizing
 Overall, Prefect is a modern data engineering tool that aims to make the process of building, running, and maintaining data pipelines easy and efficient.
 
 ### How to pip install 
-``bash
+```python
 pip install prefect 
 pip install prefect_gcpt
-``bash
+```
 
 # Extract Data 
 ```python
@@ -37,3 +37,73 @@ def extract_data(download_dir: str) -> None:
         print("File not Found")
 ```
 # Google Cloud Storage & Prefect_gcp blocks 
+## Create a bucket
+In the dtc-de-ab project, select Cloud Storage, and select Buckets. I already have a backup called dtc_data_lake_dtc-de-ab. 
+Inside Orion, select Blocks at the left menu, choose the block GCS Bucket and click Add + button. Complete the form with:
+Block Name: e-commerce-shipping-data
+Name of the bucket: dtc_data_lake_dtc-de-ab
+
+## Prefect Blocks
+Blocks are a primitive within Prefect that enable the storage of configuration and provide an interface for interacting with external systems. With blocks, you can securely store credentials for authenticating with services like AWS, GitHub, Slack, and any other system you'd like to orchestrate with Prefect.
+
+### Create service account
+On Google Cloud Console, select IAM & Admin, and Service Accounts. Then click on + CREATE SERVICE ACCOUNT with these informations:
+Service account details: zoom-de-service-account
+Give the roles BigQuery Admin and Storage Admin.
+
+### Add the new key to the service account
+Then, add a key on it. Click on ADD KEY + button, select CREATE A NEW KEY, select JSON and click on CREATE button.
+
+### Adding Credentials 
+When returning to the Orion form to create the GCS Bucket, which is called dtc_data_lake_dtc-de-ab, make sure the Gcp Credentials field says e-commerce-creds.
+
+We then obtain a fragment of code to insert into our python code. Which allows us to add the write_gcs method to prefect_storage.py.
+
+# ELT main script 
+```python
+from prefect import flow,task
+import os
+from prefect_gcp.cloud_storage import GcsBucket
+
+
+@task(log_prints=True)
+def extract_data(download_dir: str) -> None:
+    """extracting kaggle data set and downloading csv into local path"""
+    file_path = os.path.exists(f"{download_dir}/Train.csv")
+    try:
+        if not file_path:
+            os.system(f"kaggle datasets download -d prachi13/customer-analytics --unzip -o -p {download_dir}")
+            print("Downloaded File")
+        else:
+            print("File Already exist")
+    except FileNotFoundError as error:
+        print(error)
+        print("File not Found")
+
+
+ 
+@task(log_prints=True)
+def write_gcp(path: str) -> None:
+    """Upload CSV file into GCS"""
+    gcp_cloud_storage_bucket_block = GcsBucket.load("e-commerce-shipping-data")
+    gcp_cloud_storage_bucket_block.upload_from_path(
+        from_path=f"{path}",
+        to_path = path
+    )
+    return path
+
+@flow(name = "Main run")
+def main() -> None:
+    """Main ELT function"""
+    download_dir = "../e-commerce_data/data"
+    extract_data(download_dir)
+    path_data = f"{download_dir}/Train.csv"
+    write_gcp(path_data)
+
+if __name__ == "__main__":
+    main()
+```
+
+# Summary
+In this blog post, we explored how to automate data engineering tasks using Kaggle and Prefect. We demonstrated how to download CSV data from Kaggle and store it in Google Cloud Storage using Prefect. While Prefect provides a powerful workflow orchestration tool, it's essential to understand its pros and cons in a real-life work environment.
+In the next blog we will show how to take data from Google Cloud Storage and transfer it to BigQuery, a powerful data warehousing solution offered by Google Cloud. By the end of the series, readers will have a comprehensive understanding of how to build an efficient and scalable data pipeline using Kaggle, Prefect, Google Cloud Storage, and BigQuery.
