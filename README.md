@@ -119,6 +119,156 @@ We successfully transferred a CSV file into Cloud Storage using Prefect GCP. The
 ![image](https://user-images.githubusercontent.com/52333702/234568502-d266c99a-9e2b-450f-adda-4e35e6f82733.png)
 ![image](https://user-images.githubusercontent.com/52333702/234568532-036c7164-c413-4b84-a59d-6f57216a546b.png)
 
+
+
+# Extract CSV file from GCS
+```python
+def extract_GCP(path :str) -> None:
+    gcs_path = f"{path}"
+    gcs_block = GcsBucket.load("e-commerce-shipping-data")
+    gcs_block.get_directory(
+        from_path = gcs_path,
+        local_path = f"../data/"
+    )
+    return Path(f"../{gcs_path}") 
+```
+This function takes a string parameter path which represents a file path in a Google Cloud Platform (GCP) bucket. It then uses the GcsBucket class to load a GCP bucket named "e-commerce-shipping-data" and fetches a directory from the specified path. The contents of the directory are downloaded to the local path "../data/". Finally, the function returns a Path object that points to the downloaded directory in the local file system.
+Overall, this function appears to be designed to extract data from a GCP bucket and download it to the local file system for further processing.
+
+# Transform Data
+```python 
+def turn_into_df(file_path :str) -> pd.DataFrame:
+    try:
+        df = pd.read_csv(file_path)
+        return df
+    except FileNotFoundError as error:
+        print(error)
+        print("File Does not Exist")
+
+def transform_data(df :pd.DataFrame) -> pd.DataFrame:
+    """cleaning up column name as Bigquery will not allow to load"""
+    try:
+        transform_df =df.rename(columns={"Reached.on.Time_Y.N":"Reached_on_Time_Y_N","ID":"Warehouse_ID"})
+        return transform_df
+    except pd.DataFrame.empty as error_empty:
+        print(error_empty)
+        print("Dataframe was not transformed")
+```
+# Create Dataset_id and Table_id Using BigQuery API on python 
+I used the Google Cloud documentation to create functions for creating datasets and tables. These functions include a try-except block to catch errors, as well as checks to ensure that the dataset and table do not already exist before creating new ones. This helps to prevent any duplicate entries and streamlines the process of working with Google Cloud
+```python 
+def create_dataset_bq(dataset_id :str)->bigquery.Dataset:
+    """creating a dataset within bigquery if does not exist"""
+    client = bigquery.Client()
+    full_dataset_id = f"{client.project}.{dataset_id}"
+    dataset = bigquery.Dataset(full_dataset_id)
+   
+    try:
+        existing_datset = client.get_dataset(dataset_id)
+        print(f"{existing_datset} this dataset already exist")
+    except NotFound:
+            dataset.location = 'EU'
+            dataset = client.create_dataset(dataset)  # Make an API request.
+            print(f"Created dataset {client.project}.{dataset.dataset_id}")
+    return dataset
+
+def create_table_bq(data_set :str,table_id :str) -> bigquery.Table:
+    """creating table in bigquery if does not exist"""
+    client = bigquery.Client()
+    full_table_id = f"{data_set}.{table_id}"
+    
+    try:
+       existing_table = client.get_table(f"{data_set}.{table_id}")
+       print(f"{existing_table} this table already exist")
+```
+# Load Dataframe into BigQuery
+
+```python
+def write_bq(df :pd.DataFrame,dataset_name :str)-> None:
+    gcp_credentials_block = GcpCredentials.load("e-commerce-creds")
+    df.to_gbq(
+        destination_table = dataset_name,
+        project_id = "dtc-de-ab",
+        credentials = gcp_credentials_block.get_credentials_from_service_account(),
+        if_exists = "append",
+    )
+```
+# Prefect task and flow full script 
+```python 
+from prefect import flow,task
+import pandas as pd
+from prefect_gcp.cloud_storage import GcsBucket
+from prefect_gcp.bigquery import GcpCredentials
+from pathlib import Path
+from src.create_dataset_table_id import create_dataset_bq
+from src.create_dataset_table_id import create_table_bq
+
+@task(log_prints=True)
+def extract_GCP(path :str) -> None:
+    gcs_path = f"{path}"
+    gcs_block = GcsBucket.load("e-commerce-shipping-data")
+    gcs_block.get_directory(
+        from_path = gcs_path,
+        local_path = f"../data/"
+    )
+    return Path(f"../{gcs_path}")
+
+@task(log_prints=True)
+def turn_into_df(file_path :str) -> pd.DataFrame:
+    """turning filepath into a Dataframe"""
+    try:
+        df = pd.read_csv(file_path)
+        return df
+    except FileNotFoundError as error:
+        print(error)
+        print("File Does not Exist")
+
+@task(log_prints=True)
+def transform_data(df :pd.DataFrame) -> pd.DataFrame:
+    """cleaning up column name as Bigquery will not allow to load"""
+    try:
+        transform_df =df.rename(columns={"Reached.on.Time_Y.N":"Reached_on_Time_Y_N","ID":"Warehouse_ID"})
+        return transform_df
+    except pd.DataFrame.empty as error_empty:
+        print(error_empty)
+        print("Dataframe was not transformed")
+
+@task(log_prints=True)
+def write_bq(df :pd.DataFrame,dataset_name :str)-> None:
+    """load data to bigquery"""
+    gcp_credentials_block = GcpCredentials.load("e-commerce-creds")
+    df.to_gbq(
+        destination_table = dataset_name,
+        project_id = "dtc-de-ab",
+        credentials = gcp_credentials_block.get_credentials_from_service_account(),
+        if_exists = "append",
+    )
+
+@flow(name="elt to bq")
+def elt_to_bigquery()-> None:
+    data_path = 'dtc_data_lake_dtc-de-ab/../e-commerce_data/data/Train.csv'
+    path_Gcs= extract_GCP(data_path)
+    df = turn_into_df(path_Gcs)
+    clean_df = transform_data(df)
+    dataset_id = "e_commerce_shipping_data"
+    dataset = "dtc-de-ab.e_commerce_shipping_data"
+    table_id = "shipping_data"
+    dataset_name = "e_commerce_shipping_data.shipping_data"
+    create_dataset_bq(dataset_id)
+    create_table_bq(dataset,table_id)
+    write_bq(clean_df,dataset_name)
+
+if __name__ == '__main__':
+    elt_to_bigquery()
+```
+The task and flow were desinged to extract csv data from google cloud storage bucket. The CSV file was e-commerce shipping data and was extracted from kaggle dataset seen in my previous blog. Created a function which saves the CSV file into my local directory this function and what it does can be seen in the "extract CSV file from google cloud storage" heading of this blog . Turn it into a Dataframe to make transformations such as renaming columns in the Dataframe being Reached.on.Time_y.N as BigQuery does not allow "." within the coulmn name and changed ID to a more specfic and understandaing column name Warehouse_ID. Using gbq loaded the data into BigQuery Database. 
+Through the use of Google Cloud Storage, custom functions, and the powerful BigQuery database, I was able to accomplish this task and generate logs and flow diagrams in Prefect to confirm its successful completion seen below.
+
+
+
+
+
+
 # Summary
 In this blog post, we explored how to automate data engineering tasks using Kaggle and Prefect. We demonstrated how to download CSV data from Kaggle and store it in Google Cloud Storage using Prefect. While Prefect provides a powerful workflow orchestration tool, it's essential to understand its pros and cons in a real-life work environment.
 In the next blog we will show how to take data from Google Cloud Storage and transfer it to BigQuery, a powerful data warehousing solution offered by Google Cloud. By the end of the series, readers will have a comprehensive understanding of how to build an efficient and scalable data pipeline using Kaggle, Prefect, Google Cloud Storage, and BigQuery.
