@@ -264,9 +264,11 @@ if __name__ == '__main__':
 The task and flow were desinged to extract csv data from google cloud storage bucket. The CSV file was e-commerce shipping data and was extracted from kaggle dataset seen in my previous blog. Created a function which saves the CSV file into my local directory this function and what it does can be seen in the "extract CSV file from google cloud storage" heading of this blog . Turn it into a Dataframe to make transformations such as renaming columns in the Dataframe being Reached.on.Time_y.N as BigQuery does not allow "." within the coulmn name and changed ID to a more specfic and understandaing column name Warehouse_ID. Using gbq loaded the data into BigQuery Database. 
 Through the use of Google Cloud Storage, custom functions, and the powerful BigQuery database, I was able to accomplish this task and generate logs and flow diagrams in Prefect to confirm its successful completion seen below.
 
+![image](https://user-images.githubusercontent.com/52333702/236577857-199ba903-25a0-4f1d-bbc5-24441984be27.png)
 
+![image](https://user-images.githubusercontent.com/52333702/236577879-0e1e32e8-c13f-46b1-8f9b-e941f098cf7a.png)
 
-
+![image](https://user-images.githubusercontent.com/52333702/236577893-520f5880-8e15-4b5a-b197-5322bd6ee513.png)
 
 
 # Summary
