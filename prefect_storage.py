@@ -17,8 +17,6 @@ def extract_data(download_dir: str) -> None:
         print(error)
         print("File not Found")
 
-
- 
 @task(log_prints=True)
 def write_gcp(path: str) -> None:
     """Upload CSV file into GCS"""
@@ -29,7 +27,7 @@ def write_gcp(path: str) -> None:
     )
     return path
 
-@flow(name = "Main run")
+@flow(name = "CSV to GCS")
 def main() -> None:
     """Main ELT function"""
     download_dir = "../e-commerce_data/data"
